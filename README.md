@@ -23,6 +23,14 @@ The skills cover the whole range of Go programs, not just HTTP APIs: gRPC servic
 | [`go-aws`](.claude/skills/go-aws/SKILL.md) | AWS SDK for Go v2: client reuse, smithy errors, paginators, Lambda, SQS consumers, LocalStack |
 | [`go-cli`](.claude/skills/go-cli/SKILL.md) | Testable `run()` entry points, `flag`/cobra, stdout vs stderr, exit codes, releases |
 
+### AI skills
+
+| Skill | Use it for |
+|---|---|
+| [`go-mcp`](.claude/skills/go-mcp/SKILL.md) | MCP servers with the official `modelcontextprotocol/go-sdk`: typed tools, stdio vs streamable HTTP, task-shaped tool design, read-only defaults, compact results, in-memory tests |
+| [`go-llm-gateway`](.claude/skills/go-llm-gateway/SKILL.md) | LLM gateways and proxies: SSE passthrough, retries and fallback, per-key token limits and budgets, usage and cost accounting, caching, redaction, OTel GenAI tracing |
+| [`llm-token-efficiency`](.claude/skills/llm-token-efficiency/SKILL.md) | Provider-agnostic token and cost savings: prompt caching layout, model and effort routing, trimming context and tool output, structured outputs, batch APIs |
+
 The skills link to each other where topics overlap (for example, `go-aws` defers to `go-service-lifecycle` for shutdown), so each rule is written in one place.
 
 ## Installation
@@ -39,11 +47,11 @@ git clone https://github.com/AnimaTechData/golang-skill-master.git
 
 # Project-level: share with your team
 mkdir -p path/to/your-repo/.claude/skills
-cp -R golang-skill-master/.claude/skills/go-* path/to/your-repo/.claude/skills/
+cp -R golang-skill-master/.claude/skills/* path/to/your-repo/.claude/skills/
 
 # Personal: available in every project
 mkdir -p ~/.claude/skills
-cp -R golang-skill-master/.claude/skills/go-* ~/.claude/skills/
+cp -R golang-skill-master/.claude/skills/* ~/.claude/skills/
 ```
 
 You can install only the skills you need. For example, skip `go-aws` if you don't use AWS. `go-idioms` and `go-errors` are worth installing in every Go project.
