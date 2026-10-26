@@ -1,2 +1,2 @@
 # golang-skill-master
-A ser of AI agent skills for Golang applications
+A set of AI agent skills for Golang applications
