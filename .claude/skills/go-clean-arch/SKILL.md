@@ -47,12 +47,29 @@ adapters (httpapi, grpc, cli, postgres, s3, sqs)  ──►  use cases (service)
 
 - **Define interfaces where they are used**, not where they are implemented. Producers return concrete types. ("Accept interfaces, return structs.")
 - There is NO central `interfaces` package. A port belongs to the package that consumes it (e.g. `order.Repository` lives in `order`, implemented by `postgres`).
-- Keep them small (1–3 methods). Split by consumer need (`OrderReader`, `OrderWriter`) rather than mirroring every method of the implementation.
+- Keep them small (1–3 methods). Split by consumer need (`OrderReader`, `OrderWriter`) rather than mirroring every method of the implementation. A consumer that truly needs every method embeds the small interfaces (`type Repository interface { Reader; Writer }`).
 - Don't create an interface with a single implementation "for the future" unless it is needed for a boundary or a test fake.
 - Compile-time assertion in the adapter package:
 
 ```go
 var _ order.Repository = (*Repository)(nil)
+```
+
+One concrete store cannot have two methods named `Create`. When two ports (for example `book.Repository` and `loan.Repository`) both need that name, return a small concrete view for the second port. Do not merge the ports, and do not rename the domain methods to `CreateBook` / `CreateLoan` just so one type can satisfy both.
+
+```go
+func (s *Store) Create(ctx context.Context, b book.Book) (book.Book, error) { /* books */ }
+
+func (s *Store) Loans() *Loans { return &Loans{store: s} }
+
+type Loans struct{ store *Store }
+
+func (l *Loans) Create(ctx context.Context, ln loan.Loan) (loan.Loan, error) { /* loans */ }
+
+var (
+    _ book.Repository = (*Store)(nil)
+    _ loan.Repository = (*Loans)(nil)
+)
 ```
 
 ## 4. Pragmatic dependency injection
@@ -81,7 +98,7 @@ func NewClient(baseURL string, opts ...Option) *Client { /* apply defaults, then
 ```
 
 - Wire everything manually in `main.go` (or a `run(ctx, cfg) error` function called by main). Use Google Wire only when the graph becomes large; NEVER reflection-based runtime DI containers unless explicitly requested.
-- NO mutable package-level globals for dependencies (db handles, loggers, clients). `slog.SetDefault` at startup is the only accepted global, and injected loggers are still preferred.
+- NO mutable package-level globals for dependencies (db handles, loggers, clients). `slog.SetDefault` at startup is accepted, and injected loggers are still preferred. The OpenTelemetry propagator may be built once in `main`; tracer and meter providers are injected (`go-observability`). Do not call `otel.SetTracerProvider` when the caller can pass `WithTracerProvider`.
 - No `init()` with side effects (network, file I/O, flag parsing). `init` is only for trivially safe registrations.
 
 ## 5. main.go shape
@@ -106,7 +123,7 @@ func run(ctx context.Context, args []string, getenv func(string) string) error {
 
 ## 6. Applies to every app type
 
-- **HTTP/gRPC services**: handlers are adapters; they parse, call a service, map errors to status codes.
+- **HTTP/gRPC services**: handlers are adapters; they parse, call a service, map errors to status codes. HTTP shape is `go-http`.
 - **Workers/consumers**: the message handler is an adapter calling the same service.
 - **CLIs**: commands are adapters; business logic lives in packages callable without the CLI. See `go-cli`.
 - **Libraries**: no `internal/platform`; expose a minimal, stable API, keep everything else unexported or in `internal/`.
@@ -115,6 +132,7 @@ func run(ctx context.Context, args []string, getenv func(string) string) error {
 
 - [ ] Domain imports no infrastructure packages.
 - [ ] Interfaces declared in the consuming package and minimal.
+- [ ] Two ports that share a method name are satisfied by a concrete view, not by renaming domain methods.
 - [ ] Constructors take explicit deps; no hidden globals or side-effectful `init`.
 - [ ] `main` is thin; wiring is readable top to bottom.
 - [ ] No `utils`/`common`/`models` grab-bag packages.

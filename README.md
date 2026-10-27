@@ -6,7 +6,7 @@ Drop them into a project and Claude writes and reviews Go the way an experienced
 
 The skills cover the whole range of Go programs, not just HTTP APIs: gRPC services, queue consumers and workers, AWS Lambda, CLIs, daemons, libraries and infrastructure tooling.
 
-> **Baseline:** Go 1.25+. The skills use recent stdlib features such as `sync.WaitGroup.Go`, `testing/synctest`, `t.Context()`, `b.Loop()`, `os.Root` and container-aware `GOMAXPROCS`.
+> **Baseline:** Go 1.26+. The skills use recent stdlib features such as `sync.WaitGroup.Go`, `testing/synctest`, `t.Context()`, `b.Loop()`, `os.Root` and container-aware `GOMAXPROCS`. OpenTelemetry module pins that match this baseline live in [`go-observability`](.claude/skills/go-observability/SKILL.md).
 
 ## Skills
 
@@ -16,6 +16,7 @@ The skills cover the whole range of Go programs, not just HTTP APIs: gRPC servic
 | [`go-errors`](.claude/skills/go-errors/SKILL.md) | Wrapping with `%w`, sentinel vs typed errors, `errors.Is/As/Join`, mapping errors at the edges, panics |
 | [`go-concurrency`](.claude/skills/go-concurrency/SKILL.md) | Context propagation, goroutine lifecycle, `errgroup`, channels, mutexes, atomics, pipelines, race prevention |
 | [`go-clean-arch`](.claude/skills/go-clean-arch/SKILL.md) | Project layout, layer boundaries, consumer-side interfaces, constructor injection, functional options |
+| [`go-http`](.claude/skills/go-http/SKILL.md) | HTTP adapters: stdlib `ServeMux`, JSON DTOs, body limits, one status mapper, middleware order |
 | [`go-service-lifecycle`](.claude/skills/go-service-lifecycle/SKILL.md) | `signal.NotifyContext`, ordered graceful shutdown, draining workers, timeouts, health probes, config |
 | [`go-observability`](.claude/skills/go-observability/SKILL.md) | `log/slog` (JSON, `trace_id`/`span_id`, redaction), OpenTelemetry tracing and metrics, pprof |
 | [`go-test`](.claude/skills/go-test/SKILL.md) | Table-driven tests, hand-written fakes, testcontainers-go, `synctest`, fuzzing, benchmarks, golden files |
@@ -54,13 +55,14 @@ mkdir -p ~/.claude/skills
 cp -R golang-skill-master/.claude/skills/* ~/.claude/skills/
 ```
 
-You can install only the skills you need. For example, skip `go-aws` if you don't use AWS. `go-idioms` and `go-errors` are worth installing in every Go project.
+You can install only the skills you need. For example, skip `go-aws` if you don't use AWS. `go-idioms` and `go-errors` are worth installing in every Go project. Copy [`.claude/skills/go-idioms/golangci.yml`](.claude/skills/go-idioms/golangci.yml) to the module root as `.golangci.yml`.
 
 ## Usage
 
 **Automatically.** Claude reads each skill's `description` and loads the skill when the task matches. You don't have to do anything:
 
 - *"Add an SQS consumer for order events"* → `go-aws`, `go-concurrency`, `go-service-lifecycle`
+- *"Add a checkout endpoint"* → `go-http`, `go-errors`, `go-observability`
 - *"Write tests for the pricing package"* → `go-test`
 - *"This endpoint allocates too much, speed it up"* → `go-perf`
 

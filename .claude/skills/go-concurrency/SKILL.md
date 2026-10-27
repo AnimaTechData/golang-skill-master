@@ -5,7 +5,7 @@ description: Go concurrency and safety guidelines — context propagation, gorou
 
 # Go Concurrency & Safety Guidelines
 
-Baseline: Go 1.25+. Every rule below is mandatory unless the user explicitly overrides it.
+Baseline: Go 1.26+. Every rule below is mandatory unless the user explicitly overrides it.
 
 ## 1. Context first
 

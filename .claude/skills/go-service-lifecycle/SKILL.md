@@ -57,11 +57,17 @@ func run(ctx context.Context) error {
     g.Go(func() error { return consumer.Run(gctx) }) // returns when gctx is done, after draining
     g.Go(func() error {
         <-gctx.Done()
-        health.SetNotReady()                       // 1. fail readiness so LB stops routing
-        time.Sleep(cfg.ReadinessDrainDelay)        // 2. let LB observe it (k8s: a few seconds)
+        health.SetNotReady() // 1. fail readiness so the LB stops routing
+        // 2. Let the LB observe not-ready. Default is 0; set a few seconds on Kubernetes.
+        //    The sum of this delay and ShutdownTimeout must fit the platform grace period.
+        if d := cfg.ReadinessDrainDelay; d > 0 {
+            timer := time.NewTimer(d)
+            defer timer.Stop()
+            <-timer.C
+        }
         shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), cfg.ShutdownTimeout)
         defer cancel()
-        return srv.Shutdown(shutdownCtx)           // 3. stop accepting, finish in-flight
+        return srv.Shutdown(shutdownCtx) // 3. stop accepting, finish in-flight
     })
     err = g.Wait()
     // 4. close shared resources last, after all users have stopped
@@ -108,6 +114,6 @@ Rules:
 - [ ] `signal.NotifyContext` at the root; `run(ctx) error` pattern.
 - [ ] Every component has a blocking `Run`/`Shutdown` and is awaited.
 - [ ] Shutdown uses a fresh bounded context and ordered steps.
-- [ ] Readiness fails before draining.
+- [ ] Readiness fails before draining. The drain waits on a timer; its default outside Kubernetes is 0.
 - [ ] Server and client timeouts set.
 - [ ] Resources closed after their users stop.
