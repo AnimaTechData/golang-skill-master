@@ -83,7 +83,7 @@ Rules:
 ## 6. Runtime & GC tuning
 
 - Containers: set `GOMEMLIMIT` (~80–90% of the container memory limit) to avoid OOM kills while keeping GC lazy. Tune `GOGC` only with evidence.
-- Go 1.25+ sets `GOMAXPROCS` from the container CPU limit automatically; don't add `automaxprocs` on 1.25+.
+- Go 1.26+ sets `GOMAXPROCS` from the container CPU limit automatically (since 1.25); don't add `automaxprocs`.
 - Reduce GC pressure by reducing allocation rate and pointer-heavy live heap, not by calling `runtime.GC()`.
 
 ## 7. Review checklist

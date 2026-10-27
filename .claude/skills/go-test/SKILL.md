@@ -5,7 +5,7 @@ description: Go testing best practices — table-driven tests, subtests, paralle
 
 # Go Testing Best Practices & Testcontainers
 
-Baseline: Go 1.25+.
+Baseline: Go 1.26+.
 
 ## 1. Table-driven tests with subtests
 
@@ -85,11 +85,14 @@ func (f *fakeRepo) Get(_ context.Context, id string) (order.Order, error) {
 ```
 
 - Small consumer-side interfaces (see `go-clean-arch`) make fakes a few lines long.
+- An in-memory adapter is the real implementation when that is what production runs. Do not start testcontainers for a port that has no database.
 - Function-field fakes are handy for one-off behavior: `type fakeSender struct{ sendFn func(ctx context.Context, m Msg) error }`.
 - If using `gomock` (`go.uber.org/mock`) or `testify/mock`: generate via `//go:generate`, assert behavior that matters, avoid over-specifying call order/counts.
 - Never mock what you don't own deeply (e.g. `*sql.DB`) — test against a real database with testcontainers instead.
 
 ## 4. Integration tests with testcontainers-go
+
+Use testcontainers for an adapter that talks to a real server (Postgres, Redis, a queue). Skip this section when the production adapter is in-memory; exercise that store directly under `go test -race`.
 
 - Use `github.com/testcontainers/testcontainers-go` and its modules (`modules/postgres`, `modules/redis`, `modules/localstack`, `modules/kafka`).
 - Separate from unit tests with a build tag (`//go:build integration`) or `if testing.Short() { t.Skip(...) }`. Pick one convention per repo.

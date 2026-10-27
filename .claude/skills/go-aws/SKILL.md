@@ -107,7 +107,7 @@ for p.HasMorePages() {
 ## 7. Cloud-native hygiene
 
 - Configuration via environment (12-factor); secrets from Secrets Manager / SSM Parameter Store fetched at startup (and cached/refreshed), never baked into images.
-- Containers: static binaries (`CGO_ENABLED=0`), distroless or scratch base, non-root user. Go 1.25+ already respects container CPU limits for `GOMAXPROCS`; set `GOMEMLIMIT` to ~80–90% of the memory limit.
+- Containers: static binaries (`CGO_ENABLED=0`), distroless or scratch base, non-root user. Go 1.26+ already respects container CPU limits for `GOMAXPROCS` (since 1.25); set `GOMEMLIMIT` to ~80–90% of the memory limit.
 - Expose health/readiness endpoints for ECS/EKS; readiness must fail during shutdown.
 - Least-privilege IAM per service; never `*` actions in production policies.
 

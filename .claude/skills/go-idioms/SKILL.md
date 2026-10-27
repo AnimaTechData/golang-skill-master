@@ -9,12 +9,11 @@ Sources of truth, in order: the project's existing conventions → [Effective Go
 
 ## 1. Toolchain & modules
 
-- Pin the language version in `go.mod` (`go 1.25`) and use a `toolchain` line if needed. Use the `tool` directive (Go 1.24+) for dev tools instead of `tools.go`.
+- Pin the language version in `go.mod` (`go 1.26`) and use a `toolchain` line if needed. Use the `tool` directive (Go 1.24+) for dev tools instead of `tools.go`.
 - Every change must pass: `gofmt`/`goimports`, `go vet ./...`, `golangci-lint run`, `go test -race ./...`, `govulncheck ./...`.
-- Keep dependencies minimal; prefer the stdlib (`log/slog`, `net/http` routing with method+pattern `mux.HandleFunc("GET /orders/{id}", h)`, `slices`, `maps`, `errors`, `iter`). Justify every new module.
+- Lint with the config shipped next to this skill, [golangci.yml](golangci.yml) (golangci-lint v2; `config verify` passes on v2.5). Copy it to the module root as `.golangci.yml`. `errcheck`, `govet`, and `staticcheck` come from golangci-lint's default set; the file enables the extras: `errorlint`, `revive`, `gosec`, `bodyclose`, `noctx`, `contextcheck`, `sqlclosecheck`, `rowserrcheck`, `nilerr`, `exhaustive`, `gocritic`, and `prealloc` (advisory). `govet` includes `copylocks` and `loopclosure`. `gocritic`'s `hugeParam` and `unnamedResult` stay off: domain values are passed by value, and named results are only for documentation or `defer`.
+- Keep dependencies minimal; prefer the stdlib (`log/slog`, `net/http` routing with method+pattern `mux.HandleFunc("GET /orders/{id}", h)`, `slices`, `maps`, `errors`, `iter`). Justify every new module. HTTP handler shape is `go-http`.
 - `go mod tidy` before committing; never edit `go.sum` by hand.
-
-Recommended `golangci-lint` linters beyond defaults: `errcheck`, `errorlint`, `govet` (incl. `copylocks`, `loopclosure`), `staticcheck`, `revive`, `gosec`, `bodyclose`, `noctx`, `contextcheck`, `sqlclosecheck`, `rowserrcheck`, `nilerr`, `exhaustive`, `gocritic`, `prealloc` (advisory).
 
 ## 2. Naming
 

@@ -44,6 +44,37 @@ if errors.As(err, &ve) { /* use ve.Field */ }
 - Opaque errors (just wrapped) when callers shouldn't branch at all.
 - Domain packages own their sentinel/typed errors; adapters translate infrastructure errors into them (`sql.ErrNoRows` → `order.ErrNotFound`; AWS `NoSuchKey` → `ErrNotFound`).
 - Use `errors.Join` to aggregate multiple independent failures (validation of many fields, closing many resources).
+- `errors.As` on a joined error returns only the first match. To collect every field, walk `Unwrap() []error` and do not call `errors.As` on the join itself:
+
+```go
+type FieldError struct {
+    Field  string
+    Reason string
+}
+
+func validationFields(err error) []FieldError {
+    var out []FieldError
+    var walk func(error)
+    walk = func(err error) {
+        if err == nil {
+            return
+        }
+        if joined, ok := err.(interface{ Unwrap() []error }); ok {
+            for _, part := range joined.Unwrap() {
+                walk(part)
+            }
+            return
+        }
+        var ve *ValidationError
+        if errors.As(err, &ve) {
+            out = append(out, FieldError{Field: ve.Field, Reason: ve.Reason})
+        }
+    }
+    walk(err)
+    return out
+}
+```
+
 - NEVER compare `err.Error()` strings or use `==` on wrapped errors.
 - Beware the typed-nil trap: never return a nil `*MyError` as `error` — return a literal `nil`.
 
@@ -53,11 +84,12 @@ Translate domain errors to transport representations in exactly one place per tr
 
 ```go
 func statusFor(err error) int {
+    if len(validationFields(err)) > 0 {
+        return http.StatusBadRequest
+    }
     switch {
     case errors.Is(err, order.ErrNotFound):
         return http.StatusNotFound
-    case errors.As(err, new(*order.ValidationError)):
-        return http.StatusBadRequest
     case errors.Is(err, context.DeadlineExceeded):
         return http.StatusGatewayTimeout
     default:
@@ -65,6 +97,8 @@ func statusFor(err error) int {
     }
 }
 ```
+
+HTTP responses list every field from the walker. The public message stays generic. See `go-http`.
 
 - Internal error details are logged server-side and NEVER returned to external clients (no stack traces or SQL text in responses).
 - Same idea for gRPC (`status.Error(codes.NotFound, ...)`), CLIs (exit codes), and message consumers (retry vs. dead-letter vs. drop).
@@ -83,6 +117,6 @@ When a caller (consumer, job runner) must decide whether to retry, make it expli
 
 - [ ] No ignored errors; no log-and-return.
 - [ ] Wrap messages give context without "failed to".
-- [ ] `errors.Is/As` used; no string matching.
+- [ ] `errors.Is/As` used; no string matching. Joined validation is walked, not `errors.As`'d once.
 - [ ] Infra errors translated at adapter boundaries.
 - [ ] External responses don't leak internals.

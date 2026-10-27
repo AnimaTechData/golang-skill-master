@@ -1,0 +1,63 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - contextcheck
+    - errorlint
+    - exhaustive
+    - gocritic
+    - gosec
+    - nilerr
+    - noctx
+    - prealloc
+    - revive
+    - rowserrcheck
+    - sqlclosecheck
+  settings:
+    exhaustive:
+      default-signifies-exhaustive: true
+    govet:
+      enable:
+        - copylocks
+        - loopclosure
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - style
+        - performance
+      # hugeParam flags domain structs passed by value (~100 bytes). unnamedResult
+      # asks for names this skill reserves for documentation and defer.
+      disabled-checks:
+        - hugeParam
+        - unnamedResult
+    revive:
+      rules:
+        - name: exported
+        - name: package-comments
+        - name: error-naming
+        - name: error-strings
+        - name: errorf
+        - name: increment-decrement
+        - name: var-naming
+        - name: receiver-naming
+        - name: indent-error-flow
+        - name: error-return
+        - name: context-keys-type
+        - name: context-as-argument
+        - name: unexported-return
+        - name: unused-parameter
+        - name: unreachable-code
+        - name: superfluous-else
+        - name: time-naming
+        - name: range
+        - name: early-return
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
